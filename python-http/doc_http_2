@@ -1,0 +1,195 @@
+#! /usr/bin/python
+
+1. 利用Python自带的包可以建立简单的web服务器
+    python -m SimpleHTTPServer [端口号，默认8000]
+    python -m SimpleHTTPServer 8080
+    http://localhost:端口号/路径
+
+Python Web服务器模块有如下三种：
+    BaseHTTPServer: 提供基本的Web服务和处理器类，分别是HTTPServer和BaseHTTPRequestHandler。
+    SimpleHTTPServer: 包含执行GET和HEAD请求的SimpleHTTPRequestHandler类。	
+    CGIHTTPServer: 包含处理POST请求和执行CGIHTTPRequestHandler类。
+
+1、HTTP请求信息(浏览器信息)
+       1、请求行：GET/POST(流的组织(请求)方式) URL(地址+目录) 版本号
+       2、请求头：Host:客户端IP和端口
+         User-Agent:浏览器信息
+         Accept：客户端能接收的数据类型
+         Accept-encoding：是否支持压缩的流
+         Accept-charset：客户端字符编码集
+       3、空行：分割请求头和消息体
+       4、消息体：请求的参数
+2、HTTP响应信息(服务器信息)
+       1、状态行：HTTP版本  服务器状态(比如：404找不到...) 描述信息
+       2、响应头
+        content-text：服务器发送信息的类型
+        date：发送时间
+        server：服务器类型
+       3、消息体：服务器发送给客户端的页面内容
+
+通过在服务器上定义 do_GET 和 do_POST ，您可以在单个服务器实例上处理 GET 和 POST 请求，但是因为所使用的简单事件循环的性质，您可以使用线程技术在不同端口上进行侦听。这让您同时运行两个服务器实例。线程技术是方法之一，而使用异步事件处理程序是另一种方法。
+
+RFC-1945 ftp://ftp.rfc-editor.org/in-notes/rfc1945.txt    RFC describing Hypertext Transfer Protocol -- HTTP/1.0
+RFC-2616 ftp://ftp.rfc-editor.org/in-notes/rfc2616.txt    RFC describing Hypertext Transfer Protocol -- HTTP/1.1
+
+
+
+Python HTTP Server 支持模块
+
+一. SocketServer 模块, socketServer 为各种基于 socket 的服务器提供了一个框架. 该模块提供了大量的类, 你可以用它们来创建不同的服务器. 
+    BaseServer类是一个基类, 其下有不同的继承,但本质上讲, 这些类都是实现bind, listen, accept的封装;
+    另外, 所采用的是 select轮循的机制, 还实现了多进程, 多线程的封装
+
+class BaseServer:
+    def server_activate(self):                      Called by constructor to activate the server
+    def serve_forever(self, poll_interval=0.5):     Handle one request at a time until shutdown.
+    def shutdown(self):                             Stops the serve_forever loop
+    def handle_request(self):                       Handle one request, possibly blocking, provide select.select funciton
+    def _handle_request_noblock(self):              Handle one request, without blocking
+    def handle_timeout(self):                       Called if no new request arrives within self.timeout
+    def verify_request(self, request, client_address):  Verify the request.  May be overridden. Return True if we should proceed with this request.
+    def process_request(self, request, client_address): Call finish_request.
+    def server_close(self):                             Called to clean-up the server
+    def finish_request(self, request, client_address):  Finish one request by instantiating RequestHandlerClass.
+    def close_request(self, request):                   Called to clean up an individual request.
+    def handle_error(self, request, client_address):    Handle an error gracefully.  May be overridden.
+
+class TCPServer(BaseServer):
+    def server_bind(self):          Called by constructor to bind the socket.
+    def server_activate(self):      Called by constructor to activate the server. self.socket.listen(self.request_queue_size)
+    def server_close(self):         Called to clean-up the server.
+    def fileno(self):               Return socket file number. Interface required by select().
+    def get_request(self):          Get the request and client address from the socket. May be overridden. return self.socket.accept()
+    def close_request(self, request):   Called to clean up an individual request.
+
+class UDPServer(TCPServer):
+    def get_request(self):              self.socket.recvfrom
+    def server_activate(self):          No need to call listen() for UDP
+    def close_request(self, request):   No need to close anything
+
+class ForkingMixIn:             Mix-in class to handle each request in a new process
+class ThreadingMixIn:           Mix-in class to handle each request in a new thread
+
+class ForkingUDPServer(ForkingMixIn, UDPServer): pass
+class ForkingTCPServer(ForkingMixIn, TCPServer): pass
+
+class ThreadingUDPServer(ThreadingMixIn, UDPServer): pass
+class ThreadingTCPServer(ThreadingMixIn, TCPServer): pass
+
+class UnixStreamServer(TCPServer):
+class UnixDatagramServer(UDPServer):
+
+class ThreadingUnixStreamServer(ThreadingMixIn, UnixStreamServer): pass
+class ThreadingUnixDatagramServer(ThreadingMixIn, UnixDatagramServer): pass
+
+----------------------
+BaseRequestHandler类主要用来封装数据的收发功能:
+
+class BaseRequestHandler:       Base class for request handler classes
+    def setup(self):
+    def handle(self):
+    def finish(self):
+
+class StreamRequestHandler(BaseRequestHandler):
+    def setup(self):
+        self.connection = self.request
+        self.rfile = self.connection.makefile(' rb' , self.rbufsize)
+        self.wfile = self.connection.makefile(' wb' , self.wbufsize)'')'')
+        # - rfile: a file object from which receives the request is read
+        # - rfile: 这个文件对应着从 socket 进来的数据。等同于调用 request.makefile(‘rb’) 。
+        # - wfile: a file object to which the reply is written
+        # - wfile: 这个文件对应着从 socket 发送的数据。等同于调用 request.makefile(‘wb’)。
+    def finish(self):
+        if not self.wfile.closed:
+            self.wfile.flush()
+        self.wfile.close()
+        self.rfile.close()
+
+class DatagramRequestHandler(BaseRequestHandler):
+    """Define self.rfile and self.wfile for datagram sockets."""
+
+    def setup(self):
+        try:
+            from cStringIO import StringIO
+        except ImportError:
+            from StringIO import StringIO
+        self.packet, self.socket = self.request
+        self.rfile = StringIO(self.packet)
+        self.wfile = StringIO()
+
+    def finish(self):
+        self.socket.sendto(self.wfile.getvalue(), self.client_address)        
+
+            
+--------------------------------------
+
+二. BaseHTTPServer, 这是一个建立在 SocketServer 框架上的基本框架, 用于 HTTP 服务器.  
+
+class HTTPServer(SocketServer.TCPServer):
+    def server_bind(self):              重载方法:SocketServer.TCPServer.server_bind(self)来对套接字进行绑定
+
+class BaseHTTPRequestHandler(SocketServer.StreamRequestHandler):
+这个类被用来处理到达服务器的 HTTP 请求, 单独地，它不能响应任意实际的 HTTP 请求，必须是子类来处理每个请求方法 (例如， GET 或 POST)
+BaseHTTPRequestHandler 通过子类为使用提供一些类和实例变量以及方法, 该处理操作程序将解析请求和头，然后调用请求类型的具体方法
+
+BaseHTTPRequestHandler 有下列实例变量：
+client_address:     包含关连的客户端地址这样格式(host, port)的一个元组
+command:            包含的命令 (请求类型)。例如，'GET'
+path:               包含的请求路径
+request_version:    包含请求版本的字符串。例如，'HTTP/1.0'
+headers:            控制(Holds)由MessageClass 类变量指定的类的一个实例。这个实例解析和管理 HTTP 请求中的头
+rfile:              包含一个输入流，定位在可选的输入数据开头
+wfile:              包含写到客户端响应的输出流。当写给这个流时坚持使用正确的HTTP协议
+
+BaseHTTPRequestHandler 有下列类变量：
+server_version:         指定服务器软件版本。你可能想要重载它。格式是多个空格分隔的字符串，每个字符串的格式是name[/version]。例如，'BaseHTTP/0.2'
+sys_version:            包含Python系统版本，通过 version_string 方法和 server_version 类变量，以一种方便可用的格式。例如，'Python/1.4'
+error_message_format:   为构建响应到客户端的错误构建一个格式字符串
+protocol_version:       这指定在响应中使用的 HTTP 协议版本。如果设置为 'HTTP/1.1'，服务器将允许 HTTP 持续连接；
+                        然而，那么你的服务器必须 在所有它到客户端响应中包含一个正确的Content-Length 头 (使用 send_header())
+                        为了向下的兼容性，缺省设置为 'HTTP/1.0'
+MessageClass:           指定一个类似于rfc822.Message 的类解析 HTTP 头。典型地，不被重载，并且缺省为 mimetools.Message。
+responses:              这个变量包含一个错误代码整数到包含一个短的和一个长的信息的两个元素的元组的映射
+
+BaseHTTPRequestHandler 实例有下列方法：
+parse_request:                  解析从rfile中得到的那个command + path
+handle():                       调用 handle_one_request()一次 (如果能够持续连接，多次) 处理进来的 HTTP 请求, 从不需要重载它,而应实现对应的 do_*() 方法
+handle_one_request()            这个方法将解析和分派请求到对应的 do_*() 方法, 从不需要重载它。
+send_error(code[, message])     发送并记录一个完整的错误回复到客户端。数字的 code 指定 HTTP 错误代码，以 message 作为可选的，更多指定的文本
+send_response(code[, message])  发送一个响应头并记录已接收的请求。HTTP 响应行被发送，后面紧跟 Server 和 Date 头
+send_header(keyword, value)     编写一个指定的 HTTP 头到输出流。 keyword 应该指定头关键字，value 指定它的值。
+end_headers()                   发送一个空白行，表示响应中的 HTTP 头结束。
+log_request([code[, size]])     记录一个已接收的 (成功的) 请求。code 指定关联响应的数字的 HTTP 代码。如果响应的大小可用，那么它应该作为 size 参数被传递。
+log_error(...)                  当一个请求不能被完成时记录一个错误。缺省，它传递信息给 log_message()，因此它取相同的参数 (format 和 附加值)。
+log_message(  format,...)       记录一个随机信息给 sys.stderr。典型地重载创建自定义的错误日志结构, 客户端地址和当前的日期时间被作为记录的每个信息的前缀。
+version_string()                返回服务器软件的版本字符串。这是一个 server_version 和 sys_version 类变量的联合。
+date_time_string([timestamp])   返回通过timestamp给定的日期和时间(必须由 time.time()返回的格式)，格式化一个信息头,如果timestamp被省略，使用当前日期和时间
+log_date_time_string()          返回当前的日期和时间，格式化日志。
+address_string()                返回客户端地址，格式化日志。一个名称的查找被执行在客户端的IP地址上。
+
+
+---------------------------------------
+
+三. SimpleHTTPServer 模块    
+    继承BaseHTTPServer 实现的一个简单的http服务器, 支持do_GET 和 do_HEAD方法
+    一个简单的 HTTP 服务器, 提供了标准的 GET 和 HEAD 请求处理器. 客户端请求的路径名称会被翻译为一个相对文件名 
+    This module builds on BaseHTTPServer by implementing the standard GET and HEAD requests in a fairly straightforward manner.
+
+class SimpleHTTPRequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+    def do_GET(self):       调用send_head
+    def do_HEAD(self):      调用send_head
+    def send_head(self):    详细处理过程
+
+
+四. CGIHTTPServer 模块 
+    继承BaseHTTPServer和 SimpleHTTPServer类, 实现了包含处理POST请求和执行CGIHTTPRequestHandler类 
+    CGIHTTPServer 模块是一个可以通过公共网关接口( common gateway interface , CGI )调用外部脚本的 HTTP 服务器
+    This module builds on SimpleHTTPServer by implementing GET and POST requests to cgi-bin scripts.
+
+五. cgi 模块
+    cgi 模块为 CGI 脚本提供了函数和类支持. 它还可以处理 CGI 表单数据. 
+
+六. webbrowser 模块
+    webbrowser 模块提供了一个到系统标准 web 浏览器的接口. 
+    它提供了一个 open 函数, 接受文件名或 URL 作为参数, 然后在浏览器中打开它. 
+    如果你又一次调用 open 函数, 那么它会尝试在相同的窗口打开新页面
