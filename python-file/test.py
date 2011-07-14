@@ -1,4 +1,16 @@
 #! /usr/bin/pthyon
+'''
+#=============================================================================
+#     FileName:		test.py
+#     Desc:		    for test
+#     Author:		forrest
+#     Email:		hongsun924@gmail.com
+#     HomePage:		NULL
+#     Version:		0.0.1
+#     LastChange:	2011-07-14 16:44:48
+#     History:		
+#=============================================================================
+'''
 
 import os
 
