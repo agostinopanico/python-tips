@@ -1,5 +1,17 @@
 #! /usr/bin/python
 #coding=utf8
+'''
+#=============================================================================
+#     FileName:		db_create.py
+#     Desc:	        Init Mysql, create database, create table, insert, select
+#     Author:		forrest
+#     Email:		hongsun924@gmail.com
+#     HomePage:		NULL
+#     Version:		0.0.1
+#     LastChange:	2011-08-25 10:16:43
+#     History:		
+#=============================================================================
+'''
 
 import getpass, MySQLdb
 import logging
@@ -81,8 +93,7 @@ class SetupDB:
         try:
             cur.execute(sql_cmd)
         except:
-            log_msg = "uid: %s insert mail message to mysql failed." %uid
-            logging.info(log_msg)
+            logging.info("uid: %s insert mail message to mysql failed." %uid)
             pass
 
     def insert_atta(self, db_name, uid, filepath, filename):
@@ -100,16 +111,15 @@ class SetupDB:
         try:
             cur.execute(sql_cmd)
         except:
-            log_msg = "uid: %s insert attachment to mysql failed." %uid
-            logging.info(log_msg)
+            logging.info("uid: %s insert attachment to mysql failed." %uid)
             pass
     
-    def select_uid(self, db_name, uid):
+    def select_uid(self, db_name):
         cur = self.conn.cursor()
         self.use_db(db_name)
-
-        sql_cmd = "select id, uid from tb_mail where uid='%s'" %uid
-        return cur.execute(sql_cmd)
+        sql_cmd = "select uid from tb_mail"
+        cur.execute(sql_cmd)
+        return cur.fetchall()
 
 
 #if __name__ == "__main__":
