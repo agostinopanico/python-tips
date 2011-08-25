@@ -107,9 +107,8 @@ def attach_msg(part, mail_num, file_path):
         else:
             file_name =  part.get_filename()
 
-    file_name = mail_parser(part, file_name)
-
     if file_name:
+        file_name = mail_parser(part, file_name)
         logging.info("  -Start to download attachment file.")
         print "Binary Data ...", file_name
         data = part.get_payload(decode=True)
@@ -222,6 +221,7 @@ def pop_retr_mail(db, db_name, num, uid, file_path):
 # imap.uid('fetch', uid, '(RFC822)')提取邮件
 def imap_fetch_mail(db, db_name, uid, file_path):
     #typ, msg_data = imap.fetch('403' , '(BODY.PEEK[HEADER])')
+    #typ, msg_data = imap.fetch('403' , '(BODY.PEEK[TEXT])')
 
     result, data = imap.uid('fetch', uid, '(RFC822)')
     raw_email = data[0][1]
@@ -319,11 +319,19 @@ if __name__ == "__main__":
 
         # pop.uidl 获取邮件uid列表
         result, data, oct = pop.uidl()
+
+        db_uid_tuple = db.select_uid(db_name)
+        db_uid_list = []
+        for item in db_uid_tuple:
+            db_uid_list.append(item[0])
+
         for item in data:
             uid = item.split()
             mail_num = uid[0]
             mail_uid = uid[1]
-            if not db.select_uid(db_name, mail_uid):
+            if mail_uid in db_uid_list:
+                print "uid: %s is existed already!"
+            else:
                 logging.info("Start to fetch mail, num: %s, uid: %s" %(mail_num, mail_uid))
                 pop_retr_mail(db, db_name, mail_num, mail_uid, file_path)
                 logging.info("End to fetch mail, num: %s, uid: %s" %(mail_num, mail_uid))
@@ -351,8 +359,15 @@ if __name__ == "__main__":
         uid_result, uid_data = imap.uid('search' , None, "ALL")
         uid_list = uid_data[0].split()
 
+        db_uid_tuple = db.select_uid(db_name)
+        db_uid_list = []
+        for item in db_uid_tuple:
+            db_uid_list.append(item[0])
+
         for uid in uid_list :
-            if not db.select_uid(db_name, uid):
+            if uid in db_uid_list:
+                print "uid: %s fetched already!" %uid
+            else:
                 logging.info("Start to fetch mail, uid: %s" %uid)
                 imap_fetch_mail(db, db_name, uid, file_path)
                 logging.info("End to fetch mail, passed, uid: %s" %uid)
