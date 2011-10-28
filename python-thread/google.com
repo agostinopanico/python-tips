@@ -1,5 +1,0 @@
-<!doctype html><html><head><meta http-equiv="content-type" content="text/html; charset=Big5"><title>Google</title><script>window.google={kEI:"MZ3DTeSHGIjKcaLv0cQE",kEXPI:"28505,28554,29481,29665,29685,29774,29795,29858,29876,29881,30035,30107",kCSI:{e:"28505,28554,29481,29665,29685,29774,29795,29858,29876,29881,30035,30107",ei:"MZ3DTeSHGIjKcaLv0cQE",expi:"28505,28554,29481,29665,29685,29774,29795,29858,29876,29881,30035,30107"},authuser:0,ml:function(){},kHL:"zh-TW",time:function(){return(new Date).getTime()},
-log:function(c,d,b){var a=new Image,e=google,g=e.lc,f=e.li;a.onerror=(a.onload=(a.onabort=function(){delete g[f]}));g[f]=a;b=b||"/gen_204?atyp=i&ct="+c+"&cad="+d+"&zx="+google.time();a.src=b;e.li=f+1},lc:[],li:0,
-Toolbelt:{}};
-
-window.google.sn="webhp";var i=window.google.timers={};window.google.startTick=function(a,b){i[a]={t:{start:(new Date).getTime()},bfr:!(!b)}};window.google.tick=function(a,b,c){if(!i[a])google.startTick(a);i[a].t[b]=c||(new Date).getTime()};google.startTick("load",true);try{}catc
