@@ -4,7 +4,7 @@
 #=============================================================================
 #     FileName:		pop_imap_recv_mail.py
 #     Desc:		    Parser and fetch mail message, support POP3 and IMAP protocol
-#     Author:		forrest
+#     Author:		Eko
 #     Email:		hongsun924@gmail.com
 #     HomePage:		NULL
 #     Version:		0.0.1
