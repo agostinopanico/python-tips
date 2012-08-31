@@ -4,7 +4,7 @@
 #=============================================================================
 #     FileName:		db_create.py
 #     Desc:	        MySQLlib to create SQL database and tables, it's used for saving mail message	
-#     Author:		forrest
+#     Author:		Eko
 #     Email:		hongsun924@gmail.com
 #     HomePage:		NULL
 #     Version:		0.0.1
